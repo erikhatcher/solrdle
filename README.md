@@ -62,11 +62,11 @@ Oops still not there.  With this new information our Solr filters are now:
 
 * `-({!terms f=letters_ss v=$exclude_letters})`
 * `letter2_s:O`
-* `letter1_s:T`
+* `-letter1_s:T`
 * `-letter3_s:N`
 * `letters_ss:(T AND N)`
-* `letter1_s:N`
-* `letter3_s:T`
+* `-letter1_s:N`
+* `-letter3_s:T`
 * with `$excluded_filters` set to `S,L,A,R,I,C,E,D`
 
 Only two possible words left: `FOUNT` and `MOUNT`.  One more Solr-educated guess: `MOUNT`:
