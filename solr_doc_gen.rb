@@ -4,7 +4,7 @@ file='five_letter_words.txt'
 solr_docs = []
 File.readlines(file).each do |line|
 
-  word = line.strip
+  word = line.strip.upcase
   
   solr_doc = { id: word.strip, 
                letter1_s: word[0],

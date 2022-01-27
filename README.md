@@ -1,64 +1,85 @@
-# Word list generation
+# Solrdle
 
-Downloaded words_alpha.txt from https://github.com/dwyl/english-words
+Solr powered Wordle guesser.  "so lord uhl"
 
-Extracted all five letter words from the `words_alpha.txt` file using (file contains carriage returns, so have to account for that):
-
-> cat words_alpha.txt | grep '^.....\r$' > five_letter_words.txt
-
-Now generate a Solr JSON data file:
-
-> ruby solr_doc_gen.rb > solr_docs.json
-
-# Solr
+## Solr
 
 Start Solr and create a `words` collection:
 
 > bin/solr create -c words
 
-# Examples
+## Building the dictionary
 
-## Example 1: some bad human guesses that could have been prevented
+  * Download words_alpha.txt from https://github.com/dwyl/english-words
 
-![image info](./wordle_example_1.jpg)
+  * Extracted all five letter words from the `words_alpha.txt` file using (file contains carriage returns, so have to account for that):
 
-After the initial `FRIED` guess, we know none of those letters are in the answer.  Let's ask Solr how many words there are without those letters:
+> cat words_alpha.txt | grep '^.....\r$' > five_letter_words.txt
 
-http://localhost:8983/solr/words/select?q=*:*&fq=-{!terms f=letters_ss}f,r,i,e,d
+  * Now generate a Solr JSON data file:
 
-Let's guess another word, from that list of over 3000 words remaining, of `LOANS`.  Wordle gives us the green light on the third letter `A`.  Using this new information, that none of the letters other than the `A` is present, we narrow the list down further:
+> ruby solr_doc_gen.rb > solr_docs.json
 
-http://localhost:8983/solr/words/select?q=*:*&fq=-{!terms f=letters_ss}f,r,i,e,d,l,o,n,s&fq=letter3_s:a&fl=id&rows=9999
+  * Index the five letter words into Solr:
 
-We're down to 69 words.  Let's guess again from that list, `QUACK`.  We can now eliminate words with `Q` and `U`, and know that the last two letters are `CK`.   Using this info, we can query Solr to see what's left:
+> bin/post -c words ~/dev/solrdle/solr_docs.json 
 
-http://localhost:8983/solr/words/select?q=*:*&fq=-{!terms f=letters_ss}f,r,i,e,d,l,o,n,s,q,u&fq=letter3_s:a&fq:letter4_s:c&fq=letter5_s:k&fl=id,*&rows=9999
+## Examples
 
-There's now 6 words left: `aback`, `chack`, `chawk`, `kyack`, `thack`, and `whack`
+### Example 1: SOLAR TONIC
 
-You can see in the example that `CRACK` was a bad next choice as `R` was already marked off, and really only two of those words are reasonably common (`aback` and `whack`).  `KNACK` was also a bad choice too, as `N` was already marked off.
+We start with the word `SOLAR`:
 
-## Example 2
+![image info](./screenshots/example1_row1.png)
 
-![image info](./wordle_example_2.jpg)
+We now know that the second letter is `O` and there none of the letters `S`, `L`, `A`, nor `R` are in the solution.  Using this information, we query Solr using these these filters:
 
-Let's make a `GREAT` guess.  We learn that there's an `A` somewhere other than the fourth letter, and that the other letters are not present in the answer.  Let's ask Solr what words are left:
+* `-({!terms f=letters_ss v=$exclude_letters})`
+* `letter2_s:O`
 
-http://localhost:8983/solr/words/select?q=*:*&fq=-{!terms f=letters_ss}g,r,e,t&fq:-letter4_s:a&fq={!terms f=letters_ss}a&fl=id,*&rows=9999
+where `$exclude_letters` is `S,L,A,R`
 
-That leaves us with over 2300 words.  Next guess is `MOLDY`, with no letter matches.  Using that new exclusion information, we query Solr:
+there's 570 words that match this criteria (out of nearly 16,000 words in the word list used), from `BOBBY` to `ZOWIE`.
 
-http://localhost:8983/solr/words/select?q=*:*&fq=-{!terms f=letters_ss}g,r,e,t,m,o,l,d,y&fq:-letter4_s:a&fq={!terms f=letters_ss}a&fl=id&rows=9999&wt=csv
+Glancing through the list and picking one of those words, `TONIC`, gives this new information:
 
-Still a lot of words left to consider, over 500.  We next guess `PANIC`, giving us one additional known letter (but not its position, other than not the fifth one) and a few more letters to exclude.  What's Solr say is left?
+![image info](./screenshots/example1_row2.png)
 
-http://localhost:8983/solr/words/select?q=*:*&fq=-{!terms%20f=letters_ss}g,r,e,t,m,o,l,d,y,p,n,i&fq:-letter4_s:a&fq=letters_ss:(a%20AND%20c)&fl=id&rows=9999&xwt=csv
+We now know that `I` and `C` are also not in the solution as well, and we know that there is a `T` but not as the first letter and there's an `N` but not as the third letter.  We add this information to our Solr filters:
 
-Down to 54 words left.  We guess `SHACK` which gets us a lot warmer!  The last four letters are now known, and there's no `S`.  Solr narrows it down to these words:
+* `-letter1_s:T`
+* `-letter3_s:N`
+* `letters_ss:(T AND N)`
+* and we add `I` and `C` to `$exclude_letters`: `S,L,A,R,I,C`
 
-http://localhost:8983/solr/words/select?q=*:*&fq=-{!terms%20f=letters_ss}g,r,e,t,m,o,l,d,y,p,n,i,s&fq:-letter4_s:a&fq=letters_ss:(a%20AND%20c)&fq=letter2_s:h&fq=letter3_s:a&fq=letter4_s:c&letter5_s:k&fl=id&rows=9999&wt=csv
+After two rows we have only 6 possible words left: `FOUNT`, `MOTON`, `MOUNT`, `NOBUT`, `NOTED`, and `NOTUM`.  
 
-Only `chack` and `whack` are left, and is `chack` even a real word?!   
+Let's give one of those non-obscure words a try, `NOTED`:
 
-`WHACK` it is!
+![image info](./screenshots/example1_row3.png)
+
+Oops still not there.  With this new information our Solr filters are now:
+
+* `-({!terms f=letters_ss v=$exclude_letters})`
+* `letter2_s:O`
+* `letter1_s:T`
+* `-letter3_s:N`
+* `letters_ss:(T AND N)`
+* `letter1_s:N`
+* `letter3_s:T`
+* with `$excluded_filters` set to `S,L,A,R,I,C,E,D`
+
+Only two possible words left: `FOUNT` and `MOUNT`.  One more Solr-educated guess: `MOUNT`:
+
+![image info](./screenshots/example1_row4.png)
+
+Tada!
+
+The full final Solr request is `http://localhost:8983/solr/words/select?rows=9999&wt=csv&fl=id&q=*:*&fq=-({!terms%20f=letters_ss%20v=$exclude_letters})&exclude_letters=S,L,A,R,I,C,E,D&fq=letter2_s:O&fq=-letter1_s:T&fq=-letter3_s:N&fq=letters_ss:(T%20AND%20N)&fq=-letter1_s:N&fq=-letter3_s:T` 
+
+
+
+
+
+
 
