@@ -32,7 +32,7 @@ We start with the word `SOLAR`:
 
 ![image info](./screenshots/example1_row1.png)
 
-We now know that the second letter is `O` and there none of the letters `S`, `L`, `A`, nor `R` are in the solution.  Using this information, we query Solr using these these filters:
+We now know that the second letter is `O` and that none of the letters `S`, `L`, `A`, nor `R` are in the solution.  Using this information, we query Solr using these these filters:
 
 * `-({!terms f=letters_ss v=$exclude_letters})`
 * `letter2_s:O`
