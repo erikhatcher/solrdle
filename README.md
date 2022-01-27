@@ -77,7 +77,11 @@ Tada!
 
 The full final Solr request is `http://localhost:8983/solr/words/select?rows=9999&wt=csv&fl=id&q=*:*&fq=-({!terms%20f=letters_ss%20v=$exclude_letters})&exclude_letters=S,L,A,R,I,C,E,D&fq=letter2_s:O&fq=-letter1_s:T&fq=-letter3_s:N&fq=letters_ss:(T%20AND%20N)&fq=-letter1_s:N&fq=-letter3_s:T` 
 
+## How it works
 
+`solr_doc_gen.rb` holds the key to how this works.  Each word becomes a document in Solr, with the word itself being the unique `id`.  Each letter of the word is indexed into positionl fields: `letter1_s`..`letter5_s` so we can use the green lighted, exact position match information, to narrow down the possibilities.  Additionally, each letter of the word is added individually to a "bag of letters", `letters_ss`, field allowing us to exclude the greyed out letters and include the "right letter wrong position" letters.
+
+The `*_s` suffix is a single-valued `string` field in Solr, and `*_ss` is multivalued, using Solr's default schema.
 
 
 
