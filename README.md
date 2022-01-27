@@ -2,13 +2,23 @@
 
 Solr powered Wordle guesser.  "so lord uhl"
 
-## Solr
+## Installation
 
-Start Solr and create a `words` collection:
+* Start Solr and create a `words` collection:
 
 > bin/solr create -c words
 
-## Building the dictionary
+* Index the five letter words into Solr:
+
+> bin/post -c words solr_docs.json 
+
+## Examples
+
+### Example 1: SOLAR TONIC
+
+For this first example, a larger (>15,000) list of words was used than necessary, before learning about Wordle's smaller list actually used.  Compare this with Example 2 to see how much quicker a smarter, smaller dictionary works.
+
+ For this example, run these steps to have a larger word list index:
 
   * Download words_alpha.txt from https://github.com/dwyl/english-words
 
@@ -20,13 +30,7 @@ Start Solr and create a `words` collection:
 
 > ruby solr_doc_gen.rb > solr_docs.json
 
-  * Index the five letter words into Solr:
-
-> bin/post -c words ~/dev/solrdle/solr_docs.json 
-
-## Examples
-
-### Example 1: SOLAR TONIC
+If you've already indexed the provided smaller word list, recreate the `words` by first deleting it with  `bin/solr delete -c words` and recreate that collection and index the newly generated `solr_docs.json` as detailed above.
 
 We start with the word `SOLAR`:
 
@@ -76,6 +80,12 @@ Only two possible words left: `FOUNT` and `MOUNT`.  One more Solr-educated guess
 Tada!
 
 The full final Solr request is `http://localhost:8983/solr/words/select?rows=9999&wt=csv&fl=id&q=*:*&fq=-({!terms%20f=letters_ss%20v=$exclude_letters})&exclude_letters=S,L,A,R,I,C,E,D&fq=letter2_s:O&fq=-letter1_s:T&fq=-letter3_s:N&fq=letters_ss:(T%20AND%20N)&fq=-letter1_s:N&fq=-letter3_s:T` 
+
+### Example 2: SOLAR TONIC with smaller dictionary
+
+Using the provided word list of ~2,300 words, let's try the same first couple of guesses from Example 1.  First `SOLAR`, which now yields 86 possible solutions.  Next we guess `TONIC`, which narrows the possible solutions down to only one!   We've found a match in three tries, after only two guesses.
+
+The full Solr URL for to get to this solution is: `http://localhost:8983/solr/words/select?rows=9999&xwt=csv&fl=id&q=*:*&fq=-({!terms%20f=letters_ss%20v=$exclude_letters})&exclude_letters=S,L,A,R,I,C&fq=letter2_s:O&fq=-letter1_s:T&fq=-letter3_s:N&fq=letters_ss:(T%20AND%20N)`
 
 ## How it works
 
