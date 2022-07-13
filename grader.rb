@@ -10,7 +10,7 @@ puts "#{answer} :"
 
 guesses_results = ["#{guess} #{grade}"]
 
-puts guesses_results
+puts "\"#{guesses_results[0]}\""
 
 matches = possible_matches(guesses_results)
 
