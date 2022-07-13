@@ -11,6 +11,11 @@ word_list.each do |word|
                letter3_s: word[2],
                letter4_s: word[3],
                letter5_s: word[4],
+               four_chars_ss: word.chars.each_with_index.collect { |c,i|
+                 w = word.clone 
+                 w[i] = '_'
+                 w
+               },
                letters_ss: word.chars
              }
   solr_docs << solr_doc
