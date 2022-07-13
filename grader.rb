@@ -2,7 +2,7 @@ require_relative 'lib'
 
 all_words = get_all_words()
 
-answer = 'AROMA' #all_words[rand(all_words.length)]
+answer = "#{ARGV[0]}" #all_words[rand(all_words.length)]
 guess = all_words[rand(all_words.length)]
 grade = grade(guess,answer)
 
