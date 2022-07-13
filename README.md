@@ -6,11 +6,36 @@ Solr powered Wordle guesser.  "so lord uhl"
 
 * Start Solr and create a `words` collection:
 
-> bin/solr create -c words
+> $SOLR_HOME/bin/solr create -c words
 
 * Index the five letter words into Solr:
 
-> bin/post -c words solr_docs.json 
+> $SOLR_HOME/bin/post -c words solr_docs.json 
+
+## Usage
+
+### Word guesser
+
+Given some guesses and Wordle supplied clues:
+
+    $ ruby word_guesser.rb "AUDIO ~xxxx" "BASIC ^~xxx" "PLAIN xx^xx" 
+    BRAKE
+    BRAVE
+
+### Solving for known answer
+
+    $ ruby grader.rb AROMA
+    AROMA :
+    ETUDE xxxxx
+    "ETUDE xxxxx" "BLOOM xx^x~"
+    "ETUDE xxxxx" "BLOOM xx^x~" "AMONG ^~^xx"
+      Solved in 4 guesses
+
+`grader.rb` starts with a known answer and picks possible solutions given known hints until solution matches.
+
+### Fetch all Wordle words and generate Solr docs
+
+    $ ruby solr_doc_gen.rb > solr_docs.json 
 
 ## Examples
 
