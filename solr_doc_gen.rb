@@ -2,6 +2,8 @@ require_relative 'lib'
 
 word_list = get_wordle_words
 
+puts word_list.size
+
 solr_docs = []
 
 word_list.each do |word|  
@@ -21,4 +23,4 @@ word_list.each do |word|
   solr_docs << solr_doc
 end
 
-puts JSON.dump(solr_docs)
+#puts JSON.dump(solr_docs)
